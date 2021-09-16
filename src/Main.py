@@ -1,46 +1,65 @@
-import inspect
+import CSVInformations
 import CheckIfFileExists
-import pdfrw
+import PDFFileValidation
+import PDFFilling
 from pdfrw import PdfReader
 import csv
 import io
 import pdfforms
 from reportlab.pdfgen import canvas
-import importlib.resources as pkg
 import os
 import argparse
-import os.path
+import pdfrw
+import sys
 
-"""We use the parser to pass arguments to the code with the command line and also to show help if necessary"""
-parser = argparse.ArgumentParser(description="Fill a PDF with formfields using a CSV file")
-parser.add_argument("PDFRootPath", help="Enter the root path of your PDF which has to be filled")
-parser.add_argument("CSVRootPath", help="Enter the root path of the CSV document")
-parser.add_argument("SavingDirectory",help="Enter the saving directory where to store the filled out PDF's")
-args = parser.parse_args()
 
-def main(PDF, CSV, SavingDirectory):
-    #"C:\\Users\\41786\\OneDrive\\Desktop\\FormField.pdf"
-    check = CheckIfFileExists.CheckIfFileExists().check(PDF,CSV,SavingDirectory)
+def main():
 
-    if check:
-        template = PdfReader(PDF)
-        #"C:\\Users\\41786\\OneDrive\\Desktop\\Daten.csv"
-        with open(CSV, newline='') as csvfile:
-            spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-            formfieldlength = len(template.Root.Pages.Kids[0].Annots)
-            counter = 0
-            for row in spamreader:
-                if len(row) < formfieldlength:
-                    print("Row number: " + str(counter) + " is to short it can cause errors filling the PDF")
-                counter+=1
-                for i in range(0,len(row)):
-                    template.Root.Pages.Kids[0].Annots[i].update(pdfrw.PdfDict(V=(row[i]),AS=(row[i])))
-                #"C:\\Users\\41786\\OneDrive\\Desktop\\"
-                pdfrw.PdfWriter().write(SavingDirectory+row[0]+".pdf", template)
+    """Check the cmd inputs make the correct commands"""
 
-    else:
-        print("have a look at --help if something is not clear")
+    if len(sys.argv) == 1:
+        print("have a look at --help to get more informations")
 
+    elif sys.argv[1] == "--help" or sys.argv[1] == "-h":
+        print("""\nThis is an application that takes 3 arguments to fill out a PDF with a CSV files data
+        Run the code as explained below to make a correct PDF form field filling with a CSV
+        ---------------------------------------------------------------------------------------------------
+        python Main.py csvPath pdfPath savingLocation
+        ---------------------------------------------------------------------------------------------------
+        1. path to CSV file (example C:\\Users\\Desktop\\Data.csv)
+        2. path to PDF with form fields (example C:\\Users\\Desktop\\PDFwithFormFields.pdf)
+        3. path to location you want to save the filled out PDF's (example C:\\Users\\Desktop)
+        --------------------------------------------------------------------------------------------------
+        Other commands that you can use:
+        --------------------------------------------------------------------------------------------------
+        -c or --pntcsv & pathToCsvFile      shows what was read from the CSV file
+                                            second argument is the path to your CSV file
+                                
+        -o or --ordtype & pathToPDFFile     shows the order and the type of the form field
+                                            second argument is path to your PDF file
+                                        
+        -f or --fieldord & pathToPDFFile    shows the order of the form fields, you have to order the
+                                            rows of your CSV file in the same order from left to right
+                                            second argument is the path to your PDF file
+                                                                                                               
+        -t or --fieldtype & pathToPDFFile   it shows the type of each form field
+                                            second argument is the path to your PDF file
+        """)
+
+    elif sys.argv[1].endswith(".pdf") and sys.argv[2].endswith(".csv") and len(sys.argv)==4:
+        PDFFilling.PDFFilling().createFilledPDF(PDF,CSV,SavingDirectory)
+
+    elif sys.argv[1] == "-c" or sys.argv[1] == "--pntcsv" and sys.argv[2].endswith(".csv") and len(sys.argv)==3:
+        CSVInformations.CSVInformations().showCSVContent(sys.argv[2])
+
+    elif sys.argv[1] == "-o" or sys.argv[1] == "--ordtype" and sys.argv[2].endswith(".pdf") and os.path.isfile(sys.argv[2]) and len(sys.argv)==3:
+        PDFFileValidation.PDFFileValidation().checkPDFWithOFlag(sys.argv[2])
+
+    elif sys.argv[1] == "-f" or sys.argv[1] == "--fieldord" and sys.argv[2].endswith(".pdf") and os.path.isfile(sys.argv[2]) and len(sys.argv)==3:
+        PDFFileValidation.PDFFileValidation().checkPDFWithFFlag(sys.argv[2])
+
+    elif sys.argv[1] == "-t" or sys.argv[1] == "--fieltype" and sys.argv[2].endswith(".pdf") and os.path.isfile(sys.argv[2]) and len(sys.argv)==3:
+        PDFFileValidation.PDFFileValidation().checkPDFWithTFlag(sys.argv[2])
 
 if __name__ == '__main__':
-    main(args.PDFRootPath, args.CSVRootPath, args.SavingDirectory)
+    main()
